@@ -1,7 +1,10 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, validator, EmailStr
+
+
+VALID_POSITIONS = ("guest", "user", "admin")
 
 
 class UserBase(BaseModel):
@@ -13,32 +16,28 @@ class UserCreate(UserBase):
     password: str
 
 
-class UserDB(UserBase):
+class UserPosition(BaseModel):
+    position: str
+
+    @validator("position")
+    def validate_position(cls, pos):
+        if pos.lower() not in VALID_POSITIONS:
+            raise ValueError("Position must be one of 'guest', 'user', or 'admin'")
+        return pos.lower()
+
+
+class UserDB(UserBase, UserPosition):
     id: int
-    position_id: Optional[int] = None
 
 
 class UserWithRelationships(UserDB):
     todos: Optional[list["TodoDB"]] = None
-    position: Optional["PositionDB"] = None
 
 
 class UserAuth(BaseModel):
     id: int
     username: str
-    position_id: Optional[int] = None
-
-
-class PositionCreate(BaseModel):
     position: str
-
-
-class PositionDB(PositionCreate):
-    id: int
-
-
-class PositionWithRelationships(PositionDB):
-    users: Optional[list["UserDB"]] = None
 
 
 class TodoCreate(BaseModel):

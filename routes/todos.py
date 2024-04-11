@@ -7,14 +7,14 @@ from security.security import get_user_from_token
 from db.database import get_session
 from db.schemas import TodoCreate, TodoDB, TodoWithRelationships, UserAuth
 from db.models import Todo
-from db import crud
+from db.crud import UserRepository, TodoRepository
 
 
 todosroute = APIRouter()
 
 
 def user_can_read_create_todos(auth_user: UserAuth):
-    if auth_user.position_id is None:
+    if auth_user.position.lower() == "guest":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized"
         )
@@ -22,7 +22,7 @@ def user_can_read_create_todos(auth_user: UserAuth):
 
 
 def user_can_edit_delete_todos(auth_user: UserAuth, todo: Todo):
-    if auth_user.id != todo.user_id:
+    if auth_user.id != todo.user_id and auth_user.position.lower() != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can't update or delete this Todo! Only author or admin can do that!",
@@ -36,7 +36,7 @@ async def get_todos(
     auth_user: UserAuth = Depends(get_user_from_token),
 ):
     if user_can_read_create_todos(auth_user):
-        todos = await crud.get_todos(session)
+        todos = await TodoRepository.get_todos(session)
         return todos
 
 
@@ -47,7 +47,7 @@ async def create_todo(
     auth_user: UserAuth = Depends(get_user_from_token),
 ):
     if user_can_read_create_todos(auth_user):
-        todo = await crud.create_todo(session, todo_data, auth_user.id)
+        todo = await TodoRepository.create_todo(session, todo_data, auth_user.id)
         return {"code": todo, "message": "Todo created successfully"}
 
 
@@ -58,7 +58,7 @@ async def get_todo(
     auth_user: UserAuth = Depends(get_user_from_token),
 ):
     if user_can_read_create_todos(auth_user):
-        todo = await crud.get_todo_with_related(session, todo_id)
+        todo = await TodoRepository.get_todo_with_related(session, todo_id)
         if todo:
             return todo
         raise HTTPException(
@@ -73,10 +73,10 @@ async def update_todo(
     session: AsyncSession = Depends(get_session),
     auth_user: UserAuth = Depends(get_user_from_token),
 ):
-    todo = await crud.get_todo(session, todo_id)
+    todo = await TodoRepository.get_todo(session, todo_id)
     if todo:
         user_can_edit_delete_todos(auth_user, todo)
-        todo = await crud.update_todo(session, todo, new_todo_data)
+        todo = await TodoRepository.update_todo(session, todo, new_todo_data)
         return todo
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Todo not found!")
 
@@ -87,10 +87,10 @@ async def delete_todo(
     session: AsyncSession = Depends(get_session),
     auth_user: UserAuth = Depends(get_user_from_token),
 ):
-    todo = await crud.get_todo(session, todo_id)
+    todo = await TodoRepository.get_todo(session, todo_id)
     if todo:
         user_can_edit_delete_todos(auth_user, todo)
-        result = await crud.delete_todo(session, todo)
+        result = await TodoRepository.delete_todo(session, todo)
         if result:
             raise HTTPException(
                 status_code=status.HTTP_204_NO_CONTENT,

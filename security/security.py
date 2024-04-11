@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import config as config
-from db.crud import get_user
+from db.crud import UserRepository
 from db.models import User
 from db.schemas import UserAuth
 from security.pwdcrypt import verify_password
@@ -16,14 +16,14 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
 async def authenticate_user(session: AsyncSession, username: str, password: str):
-    user = await get_user(session, username)
+    user = await UserRepository.get_user(session, username)
     if not user or not verify_password(password, user.password):
         return None
     return user
 
 
 def create_access_token(user: User):
-    to_encode = {"id": user.id, "sub": user.username, "position": user.position_id}
+    to_encode = {"id": user.id, "sub": user.username, "position": user.position}
     expire = datetime.now() + timedelta(minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, config.SECRET_KEY, algorithm=config.ALGORITHM)
@@ -37,7 +37,7 @@ def get_user_from_token(token: str = Depends(oauth2_scheme)) -> UserAuth:
         return UserAuth(
             id=payload.get("id"),
             username=payload.get("sub"),
-            position_id=payload.get("position"),
+            position=payload.get("position"),
         )
     except jwt.ExpiredSignatureError:
         raise HTTPException(

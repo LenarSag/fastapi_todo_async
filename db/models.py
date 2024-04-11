@@ -15,23 +15,11 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(255))
     password: Mapped[str] = mapped_column(String(255))
     email: Mapped[str] = mapped_column(String(255), unique=True)
-    position_id: Mapped[int] = mapped_column(
-        ForeignKey("position.id"), default=None, nullable=True
-    )
+    position: Mapped[str] = mapped_column(String(32), default="user")
 
     todos: Mapped[list["Todo"]] = relationship(
         "Todo", back_populates="user", cascade="all, delete-orphan"
     )
-    position: Mapped["Position"] = relationship("Position", back_populates="users")
-
-
-class Position(Base):
-    __tablename__ = "position"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    position: Mapped[str] = mapped_column(String(32), unique=True)
-
-    users: Mapped[list["User"]] = relationship("User", back_populates="position")
 
 
 class Todo(Base):
