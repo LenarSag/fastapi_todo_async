@@ -7,6 +7,7 @@ import uvicorn
 from routes.login import loginroute
 from routes.todos import todosroute
 from routes.admin import adminrouter
+from routes.category import categoriesrouter
 from db.database import init_models
 
 app = FastAPI()
@@ -15,6 +16,7 @@ app = FastAPI()
 app.include_router(loginroute, prefix="/auth")
 app.include_router(todosroute, prefix="/todo")
 app.include_router(adminrouter, prefix="/admin")
+app.include_router(categoriesrouter, prefix="/category")
 
 
 @app.exception_handler(ValueError)

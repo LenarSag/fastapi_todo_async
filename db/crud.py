@@ -123,3 +123,57 @@ class TodoRepository:
         await session.delete(db_todo)
         await session.commit()
         return True
+
+
+class CategoryRepository:
+    @classmethod
+    async def get_category(cls, session: AsyncSession, cat_id: int):
+        query = select(models.Category).filter_by(id=cat_id)
+        db_cat = await session.execute(query)
+        return db_cat.scalars().first()
+
+    @classmethod
+    async def get_category_with_related(cls, session: AsyncSession, cat_id: int):
+        query = (
+            select(models.Category)
+            .filter_by(id=cat_id)
+            .options(joinedload(models.Category.todos))
+        )
+        db_cat = await session.execute(query)
+        return db_cat.scalars().first()
+
+    @classmethod
+    async def get_categories(cls, session: AsyncSession):
+        query = select(models.Category)
+        db_cat = await session.execute(query)
+        return db_cat.scalars().all()
+
+    @classmethod
+    async def create_category(cls, session: AsyncSession, cat: schemas.CategoryCreate):
+        db_cat = models.Category(
+            text=cat.text,
+            slug=cat.slug,
+        )
+        session.add(db_cat)
+        await session.commit()
+        await session.refresh(db_cat)
+        return db_cat
+
+    @classmethod
+    async def update_category(
+        cls,
+        session: AsyncSession,
+        db_cat: models.Category,
+        new_cat_data: schemas.CategoryCreate,
+    ):
+        db_cat.text = new_cat_data.text
+        db_cat.slug = new_cat_data.slug
+        await session.commit()
+        await session.refresh(db_cat)
+        return db_cat
+
+    @classmethod
+    async def delete_category(cls, session: AsyncSession, db_cat: models.Category):
+        await session.delete(db_cat)
+        await session.commit()
+        return True

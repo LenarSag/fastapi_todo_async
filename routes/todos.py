@@ -1,11 +1,11 @@
 from typing import Union
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, Response, HTTPException, status, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from security.security import get_user_from_token
 from db.database import get_session
-from db.schemas import TodoCreate, TodoDB, TodoWithRelationships, UserAuth
+from db.schemas import TodoCreate, TodoDB, TodoWithRelation, UserAuth
 from db.models import Todo
 from db.crud import UserRepository, TodoRepository
 
@@ -51,7 +51,7 @@ async def create_todo(
         return {"code": todo, "message": "Todo created successfully"}
 
 
-@todosroute.get("/{todo_id}/", response_model=TodoWithRelationships)
+@todosroute.get("/{todo_id}/", response_model=TodoWithRelation)
 async def get_todo(
     todo_id: int,
     session: AsyncSession = Depends(get_session),
@@ -92,10 +92,7 @@ async def delete_todo(
         user_can_edit_delete_todos(auth_user, todo)
         result = await TodoRepository.delete_todo(session, todo)
         if result:
-            raise HTTPException(
-                status_code=status.HTTP_204_NO_CONTENT,
-                detail="Todo deleted successfully!",
-            )
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Couldn't delete todo, try later",

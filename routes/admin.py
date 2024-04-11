@@ -1,9 +1,9 @@
 from typing import Union
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, Response, HTTPException, status, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from security.security import get_user_from_token
-from db.schemas import UserDB, UserAuth, UserPosition, UserWithRelationships
+from db.schemas import UserDB, UserAuth, UserPosition, UserWithRelation
 from db.database import get_session
 from db.crud import UserRepository
 
@@ -16,7 +16,7 @@ def is_admin(auth_user: UserAuth):
         return True
     raise HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,
-        detail="Only admin is not allowed in this area!",
+        detail="Only for admins!",
     )
 
 
@@ -38,7 +38,7 @@ async def get_users(
         return users
 
 
-@adminrouter.get("/users/{user_id}/", response_model=UserWithRelationships)
+@adminrouter.get("/users/{user_id}/", response_model=UserWithRelation)
 async def get_user(
     user_id: int,
     session: AsyncSession = Depends(get_session),
@@ -84,14 +84,11 @@ async def delete_user(
             if user.position.lower() == "admin":
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="You can't delete admin user!",
+                    detail="You can't delete admin!",
                 )
             result = await UserRepository.delete_user(session, user)
             if result:
-                raise HTTPException(
-                    status_code=status.HTTP_204_NO_CONTENT,
-                    detail="User deleted successfully!",
-                )
+                return Response(status_code=status.HTTP_204_NO_CONTENT)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Couldn't delete user, try later",

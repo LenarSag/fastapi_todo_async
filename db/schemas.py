@@ -30,7 +30,7 @@ class UserDB(UserBase, UserPosition):
     id: int
 
 
-class UserWithRelationships(UserDB):
+class UserWithRelation(UserDB):
     todos: Optional[list["TodoDB"]] = None
 
 
@@ -52,7 +52,7 @@ class TodoDB(TodoCreate):
     created: datetime
 
 
-class TodoWithRelationships(TodoDB):
+class TodoWithRelation(TodoDB):
     user: Optional["UserDB"] = None
     category: Optional["CategoryDB"] = None
 
@@ -66,5 +66,5 @@ class CategoryDB(CategoryCreate):
     id: int
 
 
-class CategoryWithRelationships(CategoryDB):
+class CategoryWithRelation(CategoryDB):
     todos: Optional[list["TodoDB"]] = None
