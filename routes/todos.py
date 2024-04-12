@@ -7,7 +7,7 @@ from security.security import get_user_from_token
 from db.database import get_session
 from db.schemas import TodoCreate, TodoDB, TodoWithRelation, UserAuth
 from db.models import Todo
-from db.crud import UserRepository, TodoRepository
+from db.crud import TodoRepository
 
 
 todosroute = APIRouter()
